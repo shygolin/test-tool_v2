@@ -267,8 +267,6 @@ if "message_type" not in st.session_state:
     st.session_state.message_type = "info"
 if "show_upload_dialog" not in st.session_state:
     st.session_state.show_upload_dialog = False
-if "last_spreadsheet_name" not in st.session_state:
-    st.session_state.last_spreadsheet_name = DEFAULT_SPREADSHEET_NAME
 
 # Page config
 st.set_page_config(page_title="登分小工具", layout="wide")
@@ -468,48 +466,14 @@ if st.session_state.show_upload_dialog:
     
     st.divider()
     
-    with st.expander("📖 首次設置？看這裡", expanded=False):
-        st.info("""
-**第一步：創建 Google 服務帳戶**
-1. 訪問 https://console.cloud.google.com/
-2. 建立新專案（例如：登分工具）
-3. 啟用 Google Sheets API
-4. 創建服務帳戶 (API → 認證 → 服務帳戶)
-5. 創建 JSON 金鑰並下載
-
-**第二步：上傳密鑰文件**
-- 在上方「上傳您的Google服務帳戶密鑰」區域上傳下載的 JSON 文件
-- 無需複雜的 Streamlit Cloud 設置！
-
-**第三步：分享 Google Sheet**
-1. 從 JSON 文件找到 `client_email`
-2. 打開你的 Google Sheet
-3. 分享 → 添加該郵箱為編輯者
-
-詳細步驟請查看應用所在目錄的 SETUP_GUIDE.md 文件。
-        """)
-    
     with st.form(key="upload_form"):
-        st.markdown("**選擇方式（二選一）：**")
+        st.markdown("**輸入試算表ID：**")
         
-        col_method1, col_method2 = st.columns(2)
-        
-        with col_method1:
-            st.markdown("**方式1：用試算表ID** (推薦用於共享文件)")
-            spreadsheet_id = st.text_input(
-                "試算表ID",
-                placeholder="從URL中複製: /d/[ID]/edit",
-                help="從試算表URL中的 /d/ 和 /edit 之間複製ID"
-            )
-        
-        with col_method2:
-            st.markdown("**方式2：用試算表名稱**")
-            spreadsheet_name = st.text_input(
-                "試算表名稱",
-                value=st.session_state.last_spreadsheet_name,
-                placeholder="例如：國文成績",
-                help="輸入Google Drive中的試算表名稱"
-            )
+        spreadsheet_id = st.text_input(
+            "試算表ID",
+            placeholder="從URL中複製: /d/[ID]/edit",
+            help="從試算表URL中的 /d/ 和 /edit 之間複製ID"
+        )
         
         column_title = st.text_input(
             "列標題",
@@ -524,20 +488,18 @@ if st.session_state.show_upload_dialog:
             upload_cancel = st.form_submit_button("取消", use_container_width=True)
         
         if upload_submit and column_title:
-            if not spreadsheet_id and not spreadsheet_name:
-                st.error("❌ 請輸入試算表ID或名稱")
+            if not spreadsheet_id:
+                st.error("❌ 請輸入試算表ID")
             else:
                 with st.spinner("正在上傳到Google Sheets..."):
                     success, message = upload_to_google_sheets(
                         st.session_state.numbers_dict, 
                         column_title, 
-                        spreadsheet_name, 
+                        "", 
                         spreadsheet_id
                     )
                     
                     if success:
-                        if spreadsheet_name:
-                            st.session_state.last_spreadsheet_name = spreadsheet_name
                         st.success(message)
                         st.session_state.show_upload_dialog = False
                         st.rerun()
