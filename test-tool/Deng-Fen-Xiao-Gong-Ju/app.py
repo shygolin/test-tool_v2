@@ -209,8 +209,32 @@ def upload_to_google_sheets(numbers_dict, column_title, spreadsheet_name, spread
             worksheet.update('A2', seat_numbers)
         
         all_values = worksheet.get_all_values()
-        next_col_index = len(all_values[0]) + 1 if all_values and all_values[0] else 2
-        next_col_letter = get_column_letter(next_col_index)
+        
+        # Search for the first empty column
+        empty_col_index = None
+        max_col_index = len(all_values[0]) if all_values and all_values[0] else 1
+        
+        for col_idx in range(1, max_col_index + 1):
+            # Check if this column is empty (all cells are empty or don't exist)
+            is_empty = True
+            for row_idx in range(1, len(all_values)):  # Skip header row
+                cell_value = ""
+                if col_idx <= len(all_values[row_idx]):
+                    cell_value = all_values[row_idx][col_idx - 1].strip()
+                
+                if cell_value:
+                    is_empty = False
+                    break
+            
+            if is_empty:
+                empty_col_index = col_idx
+                break
+        
+        # If no empty column found, append to the end
+        if empty_col_index is None:
+            empty_col_index = max_col_index + 1
+        
+        next_col_letter = get_column_letter(empty_col_index)
         
         worksheet.update(f'{next_col_letter}1', [[column_title]])
         
