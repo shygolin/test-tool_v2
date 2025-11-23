@@ -9,6 +9,7 @@ import requests
 
 SAVE_PATH = "numbers_dict.json"
 DEFAULT_SPREADSHEET_NAME = "登分小工具 - 成績記錄"
+FIXED_SPREADSHEET_ID = "10vZcrrYPBPm4kAvsOoHusaAH8bCPKjvk4qjHjZNFNC8"
 
 # Initialize the number dictionary with all valid keys
 VALID_KEYS = [
@@ -467,14 +468,6 @@ if st.session_state.show_upload_dialog:
     st.divider()
     
     with st.form(key="upload_form"):
-        st.markdown("**輸入試算表ID：**")
-        
-        spreadsheet_id = st.text_input(
-            "試算表ID",
-            placeholder="從URL中複製: /d/[ID]/edit",
-            help="從試算表URL中的 /d/ 和 /edit 之間複製ID"
-        )
-        
         column_title = st.text_input(
             "列標題",
             placeholder="例如：第一次段考",
@@ -488,27 +481,24 @@ if st.session_state.show_upload_dialog:
             upload_cancel = st.form_submit_button("取消", use_container_width=True)
         
         if upload_submit and column_title:
-            if not spreadsheet_id:
-                st.error("❌ 請輸入試算表ID")
-            else:
-                with st.spinner("正在上傳到Google Sheets..."):
-                    success, message = upload_to_google_sheets(
-                        st.session_state.numbers_dict, 
-                        column_title, 
-                        "", 
-                        spreadsheet_id
-                    )
+            with st.spinner("正在上傳到Google Sheets..."):
+                success, message = upload_to_google_sheets(
+                    st.session_state.numbers_dict, 
+                    column_title, 
+                    "", 
+                    FIXED_SPREADSHEET_ID
+                )
+                
+                if success:
+                    st.success(message)
+                    st.session_state.show_upload_dialog = False
+                    st.rerun()
+                else:
+                    st.error(message)
                     
-                    if success:
-                        st.success(message)
-                        st.session_state.show_upload_dialog = False
-                        st.rerun()
-                    else:
-                        st.error(message)
-                        
-                        # Show setup instructions if running on Streamlit Cloud
-                        if "未找到Google Sheets認證" in message:
-                            st.info("""
+                    # Show setup instructions if running on Streamlit Cloud
+                    if "未找到Google Sheets認證" in message:
+                        st.info("""
 ### 🔧 Streamlit Cloud上的Google Sheets設置說明
 
 此應用在Streamlit Cloud上需要Google服務帳戶認證才能訪問Google Sheets。
@@ -533,7 +523,7 @@ if st.session_state.show_upload_dialog:
    (電子郵件形式：xxx@xxx.iam.gserviceaccount.com)
 
 完成後刷新此頁面即可使用！
-                            """)
+                        """)
         elif upload_submit and not column_title:
             st.error("❌ 請輸入列標題")
         
